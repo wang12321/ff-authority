@@ -1,0 +1,38 @@
+{
+  "name": "ff-authority",
+  "version": "1.0.1",
+  "description": "authority",
+  "author": "1396933943@qq.com",
+  "dependencies": {},
+  "devDependencies": {
+    "husky": "~4.2.5",
+    "gulp-bump": "^3.2.0",
+    "gulp": "^3.9.1",
+    "gulp-uglify": "^3.0.2"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "gulp",
+    "node": "node node/openBrowser",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ff-authority"
+  ],
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ],
+  "engines": {
+    "node": ">=8.9",
+    "npm": ">= 3.0.0"
+  },
+  "license": "MIT",
+  "husky": {
+    "hooks": {
+      "pre-push": "node node/openBrowser"
+    }
+  }
+}
