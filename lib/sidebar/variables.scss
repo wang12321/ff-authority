@@ -1,0 +1,26 @@
+// 主色调
+$mainColor: #015a9e;
+
+// sidebar
+$menuText:#fff;
+$menuActiveText:#409eff;
+$subMenuActiveText:#f4f4f5;
+
+$menuBg:#304156;
+$menuHover:#263445;
+
+$subMenuBg:#1f2d3d;
+$subMenuHover:#001528;
+$sideBarWidth: 210px;
+
+:export {
+  mainColor: $mainColor;
+  menuText: $menuText;
+  menuActiveText: $menuActiveText;
+  subMenuActiveText: $subMenuActiveText;
+  menuBg: $menuBg;
+  menuHover: $menuHover;
+  subMenuBg: $subMenuBg;
+  subMenuHover: $subMenuHover;
+  sideBarWidth: $sideBarWidth;
+}
