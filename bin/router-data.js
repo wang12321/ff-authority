@@ -13,24 +13,24 @@ let controlDataTagList = {} // 控件数据
 // 响应拦截器
 // response interceptor
 axios.interceptors.response.use(
-  response => {
-    const res = response.data
-    return res
-  },
-  async error => {
-    const errorInfo = {
-      errno: -1,
-      errmsg: ''
+    response => {
+      const res = response.data
+      return res
+    },
+    async error => {
+      const errorInfo = {
+        errno: -1,
+        errmsg: ''
+      }
+      if (!error.response) {
+        errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
+      } else if (error.response.status === 401) {
+        errorInfo.errmsg = `登录信息过期，跳转登录页401`
+      } else {
+        errorInfo.errmsg = `错误状态码：${error.response.status}`
+      }
+      return Promise.reject(errorInfo)
     }
-    if (!error.response) {
-      errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
-    } else if (error.response.status === 401) {
-      errorInfo.errmsg = `登录信息过期，跳转登录页401`
-    } else {
-      errorInfo.errmsg = `错误状态码：${error.response.status}`
-    }
-    return Promise.reject(errorInfo)
-  }
 )
 
 /**
@@ -140,14 +140,15 @@ function generateAsyncRouter(serverRouterMap, type = 1, children = false) {
     case 1:
     case '1':
       serverRouterMap.forEach(item => {
-        const isParent = item.children && item.children.length > 0
-        const parent = generateRouter(item, children ? isParent : true, children)
-        if (isParent && (item.children && item.children.filter(item => item.type === 2).length !== 0)) {
-          parent.children = generateAsyncRouter(item.children, type, true) || []
-        } else if (!children) {
-          parent.children = [generateRouter(item, isParent ? (item.children && item.children.filter(item => item.type === 2).length !== 0) : false, children)]
-        }
         if ((Number(item.type) === 1 || Number(item.type) === 2) && Number(item.status) === 1) {
+          const isParent = item.children && item.children.length > 0
+          const isChildrenMenu = (isParent && (item.children && item.children.filter(item => item.type === 2).length !== 0))
+          const parent = generateRouter(item, children ? isChildrenMenu : true, children)
+          if (isChildrenMenu) {
+            parent.children = generateAsyncRouter(item.children, type, true) || []
+          } else if (!children) {
+            parent.children = [generateRouter(item, isParent ? (item.children && item.children.filter(item => item.type === 2).length !== 0) : false, children)]
+          }
           menuList.push(parent)
         }
       })
@@ -205,7 +206,7 @@ function dataControlAndDataTag(data) {
         data_labels: item.data_labels,
         backend_api_method: item.backend_api_method,
         permission_id: item.route_data,
-        show_prop: item.route_data
+        show_prop: item.fields
       }
     }
     if (item.children) {
