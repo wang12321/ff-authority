@@ -7,50 +7,53 @@ const urlProdNew = 'http://10.0.10.213:8200'
 const urlProdSW = 'http://10.0.10.213:8200'
 let routerMaps = [] // 路由映射地址
 let originalData = [] // 原数据
-let menuList = [] // 菜单数据
+export let menuList = [] // 菜单数据
 let controlDataTagList = {} // 控件数据
 
 // 响应拦截器
 // response interceptor
 axios.interceptors.response.use(
-    response => {
-      const res = response.data
-      return res
-    },
-    async error => {
-      const errorInfo = {
-        errno: -1,
-        errmsg: ''
-      }
-      if (!error.response) {
-        errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
-      } else if (error.response.status === 401) {
-        errorInfo.errmsg = `登录信息过期，跳转登录页401`
-      } else {
-        errorInfo.errmsg = `错误状态码：${error.response.status}`
-      }
-      return Promise.reject(errorInfo)
+  response => {
+    const res = response.data
+    return res
+  },
+  async error => {
+    const errorInfo = {
+      errno: -1,
+      errmsg: ''
     }
+    if (!error.response) {
+      errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
+    } else if (error.response.status === 401) {
+      errorInfo.errmsg = `登录信息过期，跳转登录页401`
+    } else {
+      errorInfo.errmsg = `错误状态码：${error.response.status}`
+    }
+    return Promise.reject(errorInfo)
+  }
 )
 
 /**
  *
  * @param token
  * @param platform_key  平台key
+ * @param sub_id  子平台ID
  * @param routerUrl   映射地址
  * @param dataType  数据类型: 1-菜单数据，2-控件和数据标签数据 3-原始数据 4-All
  * @param env   环境   测试：dev  正式：prod  新环境：prodNew  新环境：prodNew 省外环境：prodSW
  */
-export function routerData({ token, platform_key, routerUrl, dataType = 1, env = 'dev' }) {
+export function routerData({ token, platform_key, routerUrl, sub_id = 0, dataType = 1, env = 'dev' }) {
   return new Promise((resolve, reject) => {
     if (token) {
       getToken = token
-    } else {
+    }
+    if (getToken.length === 0) {
       resolve({
         errno: 1,
         errmsg: 'token参数错误'
       })
     }
+
     const dataTypeList = {
       dev: urldev,
       prod: urlProd,
@@ -60,7 +63,7 @@ export function routerData({ token, platform_key, routerUrl, dataType = 1, env =
     url = dataTypeList[env]
 
     routerMaps = routerUrl
-    getMenuDataAndTag({ platform_key: platform_key }).then((data) => {
+    getMenuDataAndTag({ platform_key: platform_key, sub_id: sub_id }).then((data) => {
       menuList = data.menuData
       controlDataTagList = data.tagData
       console.log('menu and control', controlDataTagList, menuList)
@@ -77,6 +80,13 @@ export function routerData({ token, platform_key, routerUrl, dataType = 1, env =
   })
 }
 
+function containsNumber(str) {
+  for (let i = 0; i < 10; i++) {
+    if (str.indexOf(i) !== -1) return true
+  }
+  return false
+}
+
 /**
  *
  * @param path router地址 默认是当前文件路径 如果路由带了id需要自行传path ,(是数字特殊处理，为了兼容老项目获取path)
@@ -87,23 +97,49 @@ export function routerData({ token, platform_key, routerUrl, dataType = 1, env =
  * 2、如果有permissionId，isBool为false 返回对象
  * 3、如果没有permissionId 返回数组
  */
+let pathOld = ''
+let controlData = {}
 export function controlFindData({ path = '', permissionId = '', isBool = true }) {
-  path = path.length === 0 ? (window.location.hash.replace(/#/g, '') || window.location.pathname) : path
-  console.log('path', path)
-  const dataList = controlDataTagList[path] || []
+  const hash = window.location.hash.replace(/#/g, '')
+  path = path.length === 0 ? (hash.indexOf('?') > 0 ? hash.substring(0, hash.indexOf('?')) : hash || window.location.pathname) : path
+  // 如果路由绑定了动态ID
+  // 需要过滤ID
+  const regExp = new RegExp(/^(\-|\+)?\d+(\.\d+)?$/)
+  if (containsNumber(path)) {
+    const pathList = path.split('/')
+    const newPathList = pathList.filter((item) => {
+      return item && !regExp.test(item)
+    })
+    path = newPathList ? '/' + newPathList.join('/') : path
+  }
+  if (pathOld !== path) {
+    const dataList = controlDataTagList[path] || []
+    controlData = onControlFindDataObj(dataList)
+    pathOld = path
+  }
   if (permissionId.length !== 0) {
-    const controlList = onControlFindData(dataList, permissionId)
-    console.log('Find Data', controlList)
-    const controlObj = controlList.length !== 0 ? controlList[0] : {}
+    const controlObj = controlData[permissionId] || {}
     if (Number(controlObj.type) === 5 || Number(controlObj.type) === 6) {
       return controlObj
     }
-    return isBool ? controlList.length !== 0 : controlObj
+    return isBool ? Object.keys(controlObj).length !== 0 : controlObj
   } else {
-    return dataList
+    return controlData
   }
 }
-
+function onControlFindDataObj(data, dataObj = {}) {
+  data.forEach(item => {
+    if (item.permission_id) {
+      dataObj[item.permission_id] = item
+      if (item.children && item.children.length !== 0) {
+        onControlFindDataObj(item.children, dataObj)
+      }
+    }
+  })
+  return dataObj
+}
+// 递归查找 -- 不用
+// eslint-disable-next-line no-unused-vars
 function onControlFindData(data, permissionId, dataObj = []) {
   data.forEach(item => {
     if (item.permission_id === permissionId) {
@@ -126,6 +162,11 @@ const getMenuDataAndTag = (params) => {
         const menuData = generateAsyncRouter(originalData, 1)
         const tagData = generateAsyncRouter(originalData, 2)
         resolve({ menuData, tagData })
+      } else {
+        reject({
+          errno: res.errno || 1,
+          errmsg: res.errmsg || 'error'
+        })
       }
     }).catch(errno => {
       reject(errno)
@@ -217,15 +258,30 @@ function dataControlAndDataTag(data) {
   return treeList
 }
 
-const getSubPlatformData = (params) => {
-  axios.defaults.headers.common['x-xq5-jwt'] = getToken
-  axios.get(`${url}/v1/web/sub_platform`, { params: params }).then(res => {
-    if (res && res.data && Number(res.errno) === 0) {
-      console.log(2222, res)
-      originalData = res.data || []
-      const a = generateAsyncRouter(originalData)
-      console.log(111, a)
+export function getSubPlatformData({ token, platform_key = '' }) {
+  return new Promise((resolve, reject) => {
+    if (token) {
+      getToken = token
     }
+    if (getToken.length === 0) {
+      resolve({
+        errno: 1,
+        errmsg: 'token参数错误'
+      })
+    }
+    axios.defaults.headers.common['x-xq5-jwt'] = getToken
+    axios.get(`${url}/v1/web/sub_platform`, { params: { platform_key: platform_key }}).then(res => {
+      if (res && res.data && Number(res.errno) === 0) {
+        resolve(res.data)
+      } else {
+        resolve({
+          errno: res.errno || 1,
+          errmsg: res.errmsg || 'error'
+        })
+      }
+    }).catch(errno => {
+      resolve(errno)
+    })
   })
 }
 

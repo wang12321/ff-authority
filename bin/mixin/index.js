@@ -1,4 +1,4 @@
-import { controlFindData } from '../router-data'
+import { controlFindData, menuList } from '../router-data'
 
 /**
  * 默认参数：path 路径：取默认值, permissionId 权限标识(必填), isBool true返回布尔值 false返回数据对象
@@ -16,6 +16,7 @@ import { controlFindData } from '../router-data'
  * isBool为true(默认true) 返回布尔值 true为存在 false为不存在  建议使用(填写prop)
  * isBool为false 返回该权限标识下全部数据，自行判断显示，或者使用相关名称和icon
  * 如果需要使用接口返回的icon和name 那isBool设置为false
+ * 2.3 如果permissionId 不填 会返回该路径下的所有控件数据
  */
 export const limitsMixin = {
   data() {
@@ -24,6 +25,9 @@ export const limitsMixin = {
   },
   methods: {
     controlLimits(parameter) {
+      if (!menuList || (menuList && menuList.length === 0)) {
+        return true
+      }
       if (typeof (parameter) === 'object') {
         const hasPermissions = controlFindData({ ...parameter })
         if (Number(hasPermissions.type) === 5 || Number(hasPermissions.type) === 6) {
@@ -41,6 +45,8 @@ export const limitsMixin = {
           return hasPermissions.show_prop || ''
         }
         return hasPermissions
+      } else {
+        return false
       }
     }
   }

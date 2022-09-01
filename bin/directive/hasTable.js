@@ -9,17 +9,23 @@ import { controlFindData } from '../router-data'
  */
 export default {
   inserted(el, binding, vnode) {
-    if (typeof (binding.value) === 'object') {
-      const { columnKey = 'tableColumn', prop = 'prop' } = binding.value
+    if (typeof (binding.value) === 'object' && Object.prototype.hasOwnProperty.call(binding.value, 'permissionId') && binding.value.permissionId !== '') {
+      const { columnKey = 'tableColumn', columnProp = 'prop' } = binding.value
       const hasPermissions = controlFindData({ ...binding.value, isBool: false })
-      if (hasPermissions && hasPermissions.show_prop) {
-        vnode.context[columnKey] = vnode.context[columnKey].filter(item => hasPermissions.show_prop && hasPermissions.show_prop.includes(item[prop]))
+      if (hasPermissions && hasPermissions.show_prop && Object.prototype.hasOwnProperty.call(vnode.context, columnKey)) {
+        vnode.context[columnKey] = vnode.context[columnKey].filter(item => hasPermissions.show_prop && hasPermissions.show_prop.includes(item[columnProp]))
+      } else {
+        el.parentNode && el.parentNode.removeChild(el)
       }
     } else if (typeof (binding.value) === 'string') {
       const hasPermissions = controlFindData({ permissionId: binding.value, isBool: false })
-      if (hasPermissions && hasPermissions.show_prop) {
+      if (hasPermissions && hasPermissions.show_prop && Object.prototype.hasOwnProperty.call(vnode.context, 'tableColumn')) {
         vnode.context['tableColumn'] = vnode.context['tableColumn'].filter(item => hasPermissions.show_prop.includes(item['prop']))
+      } else {
+        el.parentNode && el.parentNode.removeChild(el)
       }
+    } else {
+      el.parentNode && el.parentNode.removeChild(el)
     }
   }
 }

@@ -1,4 +1,4 @@
-import { controlFindData } from '../router-data'
+import { controlFindData, menuList } from '../router-data'
 
 /**
  * 默认参数：path 路径：取默认值, permissionId 权限标识(必填), isBool true返回布尔值 false返回数据对象
@@ -7,12 +7,18 @@ import { controlFindData } from '../router-data'
  */
 export default {
   inserted(el, binding, vnode) {
-    if (typeof (binding.value) === 'object') {
+    if (!menuList || (menuList && menuList.length === 0)) {
+      return
+    }
+    if (typeof (binding.value) === 'object' && Object.prototype.hasOwnProperty.call(binding.value, 'permissionId') && binding.value.permissionId !== '') {
       const hasPermissions = controlFindData({ ...binding.value })
-      if (!hasPermissions) {
+      if (!hasPermissions || (typeof (hasPermissions) === 'object' && Object.keys(hasPermissions).length === 0)) {
         el.parentNode && el.parentNode.removeChild(el)
-      } else if (binding.value['isBool'] && !binding.value['isBool']) {
-        el.innerText = hasPermissions['name']
+      } else if (Object.prototype.hasOwnProperty.call(binding.value, 'isBool') && !binding.value['isBool']) {
+        el.innerHTML = `
+        <i class='${hasPermissions['icon']}'></i>
+        <span>${hasPermissions['name']}</span>
+        `
       }
     } else if (typeof (binding.value) === 'string') {
       if (binding.value) {
@@ -21,6 +27,8 @@ export default {
           el.parentNode && el.parentNode.removeChild(el)
         }
       }
+    } else {
+      el.parentNode && el.parentNode.removeChild(el)
     }
   }
 }
