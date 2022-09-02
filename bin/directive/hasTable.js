@@ -19,8 +19,10 @@ export default {
       }
     } else if (typeof (binding.value) === 'string') {
       const hasPermissions = controlFindData({ permissionId: binding.value, isBool: false })
-      if (hasPermissions && hasPermissions.show_prop && Object.prototype.hasOwnProperty.call(vnode.context, 'tableColumn')) {
-        vnode.context['tableColumn'] = vnode.context['tableColumn'].filter(item => hasPermissions.show_prop.includes(item['prop']))
+      if (hasPermissions && Object.prototype.hasOwnProperty.call(vnode.context, 'tableColumn')) {
+        if (hasPermissions.show_prop && hasPermissions.show_prop.length !== 0) {
+          vnode.context['tableColumn'] = vnode.context['tableColumn'].filter(item => hasPermissions.show_prop.includes(item['prop']))
+        }
       } else {
         el.parentNode && el.parentNode.removeChild(el)
       }

@@ -12,6 +12,7 @@ import { controlFindData, menuList } from '../router-data'
  * 补充参数: prop table某一列属性值prop
  * prop有值且isBool为true(默认true) 返回布尔值 true为存在 false为不存在  建议使用(填写prop)
  * 如果prop无值或者isBool为false 返回显示字段的集合(,隔开的字符串)
+ * 如果hasPermissions.show_prop 没值，那么默认显示
  * 2.2 如果数据类型type 是3或者4 则是控件
  * isBool为true(默认true) 返回布尔值 true为存在 false为不存在  建议使用(填写prop)
  * isBool为false 返回该权限标识下全部数据，自行判断显示，或者使用相关名称和icon
@@ -33,7 +34,7 @@ export const limitsMixin = {
         if (Number(hasPermissions.type) === 5 || Number(hasPermissions.type) === 6) {
           const { prop, isBool = true } = parameter
           if (prop && isBool) {
-            return hasPermissions.show_prop && hasPermissions.show_prop.includes(prop)
+            return (hasPermissions.show_prop && hasPermissions.show_prop.length !== 0) ? hasPermissions.show_prop.includes(prop) : true
           } else {
             return hasPermissions.show_prop || ''
           }
