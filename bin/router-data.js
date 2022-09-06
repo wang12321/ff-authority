@@ -162,10 +162,9 @@ const getMenuDataAndTag = (params) => {
         const tagData = generateAsyncRouter(originalData, 2)
         resolve({ menuData, tagData })
       } else {
-        console.log(123, res)
         reject({
           errno: res.errno || 1,
-          errmsg: res.errmsg || 'error1'
+          errmsg: res.errmsg || 'Error'
         })
       }
     }).catch(errno => {
@@ -282,7 +281,7 @@ export function getSubPlatformData({ token, platform_key = '', env = 'dev', env_
       } else {
         resolve({
           errno: res.errno || 1,
-          errmsg: res.errmsg || 'error2'
+          errmsg: res.errmsg || 'Error'
         })
       }
     }).catch(errno => {
