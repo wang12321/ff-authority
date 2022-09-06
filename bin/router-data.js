@@ -2,35 +2,36 @@ import axios from 'axios'
 let getToken = ''
 let url = ''
 const urldev = 'http://authorityapi.test.xq5.com'
-const urlProd = 'http://10.0.10.213:8200'
-const urlProdNew = 'http://10.0.10.213:8200'
-const urlProdSW = 'http://10.0.10.213:8200'
+const urlProd = 'https://authorityapi.xq5.com'
 let routerMaps = [] // 路由映射地址
 let originalData = [] // 原数据
 export let menuList = [] // 菜单数据
 let controlDataTagList = {} // 控件数据
 
+const service = axios.create({
+  headers: {}
+})
 // 响应拦截器
 // response interceptor
-axios.interceptors.response.use(
-  response => {
-    const res = response.data
-    return res
-  },
-  async error => {
-    const errorInfo = {
-      errno: -1,
-      errmsg: ''
+service.interceptors.response.use(
+    response => {
+      const res = response.data
+      return res
+    },
+    async error => {
+      const errorInfo = {
+        errno: -1,
+        errmsg: ''
+      }
+      if (!error.response) {
+        errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
+      } else if (error.response.status === 401) {
+        errorInfo.errmsg = `登录信息过期，跳转登录页401`
+      } else {
+        errorInfo.errmsg = `错误状态码：${error.response.status}`
+      }
+      return Promise.reject(errorInfo)
     }
-    if (!error.response) {
-      errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
-    } else if (error.response.status === 401) {
-      errorInfo.errmsg = `登录信息过期，跳转登录页401`
-    } else {
-      errorInfo.errmsg = `错误状态码：${error.response.status}`
-    }
-    return Promise.reject(errorInfo)
-  }
 )
 
 /**
@@ -40,9 +41,10 @@ axios.interceptors.response.use(
  * @param sub_id  子平台ID
  * @param routerUrl   映射地址
  * @param dataType  数据类型: 1-菜单数据，2-控件和数据标签数据 3-原始数据 4-All
- * @param env   环境   测试：dev  正式：prod  新环境：prodNew  新环境：prodNew 省外环境：prodSW
+ * @param env     测试：dev  正式：prod
+ *  @param env_id   环境  省内环境：1 省外环境：2 新环境：3
  */
-export function routerData({ token, platform_key, routerUrl, sub_id = 0, dataType = 1, env = 'dev' }) {
+export function routerData({ token, platform_key, routerUrl, sub_id = 0, dataType = 1, env = 'dev', env_id = '1' }) {
   return new Promise((resolve, reject) => {
     if (token) {
       getToken = token
@@ -53,17 +55,14 @@ export function routerData({ token, platform_key, routerUrl, sub_id = 0, dataTyp
         errmsg: 'token参数错误'
       })
     }
-
     const dataTypeList = {
       dev: urldev,
-      prod: urlProd,
-      prodNew: urlProdNew,
-      prodSW: urlProdSW
+      prod: urlProd
     }
-    url = dataTypeList[env]
+    url = (url && url.length !== 0) ? url : dataTypeList[env]
 
     routerMaps = routerUrl
-    getMenuDataAndTag({ platform_key: platform_key, sub_id: sub_id }).then((data) => {
+    getMenuDataAndTag({ platform_key: platform_key, sub_id: sub_id, env_id: Number(env_id) }).then((data) => {
       menuList = data.menuData
       controlDataTagList = data.tagData
       console.log('menu and control', controlDataTagList, menuList)
@@ -154,8 +153,8 @@ function onControlFindData(data, permissionId, dataObj = []) {
 }
 const getMenuDataAndTag = (params) => {
   return new Promise((resolve, reject) => {
-    axios.defaults.headers.common['x-xq5-jwt'] = getToken
-    axios.get(`${url}/v1/web/menu`, { params: params }).then(res => {
+    service.defaults.headers.common['x-xq5-jwt'] = getToken
+    service.get(`${url}/v1/web/menu`, { params: params }).then(res => {
       if (res && res.data && Number(res.errno) === 0) {
         originalData = res.data || []
         // type: 1: 菜单 ，2:控件和数据标签
@@ -163,9 +162,10 @@ const getMenuDataAndTag = (params) => {
         const tagData = generateAsyncRouter(originalData, 2)
         resolve({ menuData, tagData })
       } else {
+        console.log(123, res)
         reject({
           errno: res.errno || 1,
-          errmsg: res.errmsg || 'error'
+          errmsg: res.errmsg || 'error1'
         })
       }
     }).catch(errno => {
@@ -258,7 +258,7 @@ function dataControlAndDataTag(data) {
   return treeList
 }
 
-export function getSubPlatformData({ token, platform_key = '' }) {
+export function getSubPlatformData({ token, platform_key = '', env = 'dev', env_id = '1' }) {
   return new Promise((resolve, reject) => {
     if (token) {
       getToken = token
@@ -269,14 +269,20 @@ export function getSubPlatformData({ token, platform_key = '' }) {
         errmsg: 'token参数错误'
       })
     }
-    axios.defaults.headers.common['x-xq5-jwt'] = getToken
-    axios.get(`${url}/v1/web/sub_platform`, { params: { platform_key: platform_key }}).then(res => {
+    const dataTypeList = {
+      dev: urldev,
+      prod: urlProd
+    }
+    url = (url && url.length !== 0) ? url : dataTypeList[env]
+
+    service.defaults.headers.common['x-xq5-jwt'] = getToken
+    service.get(`${url}/v1/web/sub_platform`, { params: { platform_key: platform_key, env_id: Number(env_id) }}).then(res => {
       if (res && res.data && Number(res.errno) === 0) {
         resolve(res.data)
       } else {
         resolve({
           errno: res.errno || 1,
-          errmsg: res.errmsg || 'error'
+          errmsg: res.errmsg || 'error2'
         })
       }
     }).catch(errno => {
