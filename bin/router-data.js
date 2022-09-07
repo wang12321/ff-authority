@@ -14,24 +14,24 @@ const service = axios.create({
 // 响应拦截器
 // response interceptor
 service.interceptors.response.use(
-    response => {
-      const res = response.data
-      return res
-    },
-    async error => {
-      const errorInfo = {
-        errno: -1,
-        errmsg: ''
-      }
-      if (!error.response) {
-        errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
-      } else if (error.response.status === 401) {
-        errorInfo.errmsg = `登录信息过期，跳转登录页401`
-      } else {
-        errorInfo.errmsg = `错误状态码：${error.response.status}`
-      }
-      return Promise.reject(errorInfo)
+  response => {
+    const res = response.data
+    return res
+  },
+  async error => {
+    const errorInfo = {
+      errno: -1,
+      errmsg: ''
     }
+    if (!error.response) {
+      errorInfo.errmsg = `${error.config.url}响应失败，请刷新浏览器重试。原因${error}`
+    } else if (error.response.status === 401) {
+      errorInfo.errmsg = `登录信息过期，跳转登录页401`
+    } else {
+      errorInfo.errmsg = `错误状态码：${error.response.status}`
+    }
+    return Promise.reject(errorInfo)
+  }
 )
 
 /**
@@ -290,6 +290,42 @@ export function getSubPlatformData({ token, platform_key = '', env = 'dev', env_
   })
 }
 
+export function setMenuImportJson({ token, platform_key = '', env_id = '1', tree_data = [] }) {
+  return new Promise((resolve, reject) => {
+    if (token) {
+      getToken = token
+    }
+    if (getToken.length === 0) {
+      resolve({
+        errno: 1,
+        errmsg: 'token参数错误'
+      })
+    }
+    const dataTypeList = {
+      dev: urldev,
+      prod: urlProd
+    }
+    url = (url && url.length !== 0) ? url : dataTypeList['dev']
+
+    service.defaults.headers.common['x-xq5-jwt'] = getToken
+    service.post(`${url}/v1/web/import_json`, { platform_key: platform_key, env_id: Number(env_id), tree_data: tree_data }).then(res => {
+      if (res && Number(res.errno) === 0) {
+        resolve({
+          errno: 0,
+          errmsg: res.errmsg || '上传成功'
+        })
+      } else {
+        resolve({
+          errno: res.errno || 1,
+          errmsg: res.errmsg || 'Error'
+        })
+      }
+    }).catch(errno => {
+      resolve(errno)
+    })
+  })
+}
+
 /**
  * 时间戳和日期相互转换
  * @param {number|string}  time 时间戳或日期（日期示例:2022-08-10或者2022/08/10 16:37:51）
@@ -301,7 +337,7 @@ export function getSubPlatformData({ token, platform_key = '', env = 'dev', env_
  * dateAndTimestampConversion('2022-08-10 16:37:51') // 1660120671000
  * dateAndTimestampConversion('2022/08/10 16:37:51') // 1660120671000
  */
-function dateAndTimestampConversion(time, isDisplayDate = true) {
+export function dateAndTimestampConversion(time, isDisplayDate = true) {
   const timeType = Object.prototype.toString.call(time)
   if (timeType !== '[object Number]' && timeType !== '[object String]') {
     throw new Error('参数应为数字或字符串类型')
