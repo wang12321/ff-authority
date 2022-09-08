@@ -27,7 +27,15 @@ gulp.task('sidebarView', function () {
     return gulp.src('./bin/sidebar/*.vue') // read all
         .pipe(gulp.dest('./lib/sidebar'));
 });
-gulp.task('sidebar',['sidebarView','sidebarViewCss'], function () {
+gulp.task('ffButton', function () {
+    return gulp.src('./bin/ffButton/*.vue') // read all
+        .pipe(gulp.dest('./lib/ffButton'));
+});
+gulp.task('menuImport', function () {
+    return gulp.src('./bin/menuImport/*.vue') // read all
+        .pipe(gulp.dest('./lib/menuImport'));
+});
+gulp.task('sidebar',['sidebarView','sidebarViewCss','ffButton','menuImport'], function () {
     return gulp.src('./bin/sidebar/*.js') // read all
         .pipe(uglify())
         .pipe(gulp.dest('./lib/sidebar'));
