@@ -52,7 +52,3 @@ export const limitsMixin = {
     }
   }
 }
-
-export default {
-
-}

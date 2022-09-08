@@ -32,7 +32,7 @@
  * parameter:token 和 平台标识 platform_key
  * menuList: 自动路由生成的router文件数据
  */
-import { dateAndTimestampConversion, setMenuImportJson } from '../router-data'
+import { dateAndTimestampConversion, setMenuImportJson, menuList } from '../router-data'
 export default {
   name: 'Index',
   props: {
@@ -74,32 +74,48 @@ export default {
   methods: {
     isShowMenu() {
       console.log('process.env.NODE_ENV', process.env.NODE_ENV)
-      return process.env.NODE_ENV === 'development'
+      if (!menuList || (menuList && menuList.length === 0)) {
+        return process.env.NODE_ENV === 'development'
+      }
+      return false
     },
     onSaveMenu() {
-      setMenuImportJson({ ...this.parameter, tree_data: this.saveMenuList }).then(res => {
+      this.$confirm('此操作属于一次性初始化菜单配置，请再次确认！', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        setMenuImportJson({ ...this.parameter, tree_data: this.saveMenuList }).then(res => {
+          this.$message({
+            message: res.errmsg,
+            type: res && Number(res.errno) === 0 ? 'success' : 'error'
+          })
+        })
+      }).catch(() => {
         this.$message({
-          message: res.errmsg,
-          type: res && Number(res.errno) === 0 ? 'success' : 'error'
+          type: 'info',
+          message: '已取消'
         })
       })
     },
     onMenuDataList(data, children = false) {
       const treeList = []
       data.forEach(item => {
-        const tmp = {
-          icon: item.meta.icon || 'form',
-          is_out_link: false,
-          name: item.meta.title || item.name,
-          route_data: item.path.indexOf('/') === 0 ? item.path.slice(1, item.path.length) : item.path,
-          showtime: dateAndTimestampConversion(item.meta.newTime || '0000-00-00') / 1000 || 0,
-          status: 1,
-          type: !children ? 1 : 2
+        if (item.name !== 'reference-template') {
+          const tmp = {
+            icon: item.meta.icon || 'form',
+            is_out_link: false,
+            name: item.meta.title || item.name,
+            route_data: item.path.indexOf('/') === 0 ? item.path.slice(1, item.path.length) : item.path,
+            showtime: dateAndTimestampConversion(item.meta.newTime || '0000-00-00') / 1000 || 0,
+            status: 1,
+            type: !children ? 1 : 2
+          }
+          if (item.children && !(item.children.length === 1 && item.children[0].name + 'p' === item.name)) {
+            this.$set(tmp, 'children', this.onMenuDataList(item.children, true))
+          }
+          treeList.push(tmp)
         }
-        if (item.children && !(item.children.length === 1 && item.children[0].name + 'p' === item.name)) {
-          this.$set(tmp, 'children', this.onMenuDataList(item.children, true))
-        }
-        treeList.push(tmp)
       })
       return treeList
     },
