@@ -1,19 +1,19 @@
 <template>
   <div v-if="isShowMenu()" style="float: left; width: 70px;height: 100%;line-height: 56px;color: #fff">
     <el-popover
-      placement="bottom"
-      width="300"
-      trigger="click"
+        placement="bottom"
+        width="300"
+        trigger="click"
     >
       <el-tree
-        :key="treeKey"
-        ref="treeMenu"
-        style="max-height: 300px;overflow: auto"
-        :data="menuDataList"
-        show-checkbox
-        node-key="name"
-        :props="defaultProps"
-        @check="handleCheckChange"
+          :key="treeKey"
+          ref="treeMenu"
+          style="max-height: 300px;overflow: auto"
+          :data="menuDataList"
+          show-checkbox
+          node-key="route_data"
+          :props="defaultProps"
+          @check="handleCheckChange"
       />
       <div style="padding-top: 5px;text-align: center">
         <el-button type="primary" size="mini" @click="onSaveMenu">确定</el-button>
@@ -126,9 +126,24 @@ export default {
       }
     },
     handleCheckChange() {
-      const valueModel = this.$refs.treeMenu.getCheckedNodes(false, true)
-      // const valueModel = this.$refs.treeMenu.getCheckedKeys().concat(this.$refs.treeMenu.getHalfCheckedKeys())
-      this.saveMenuList = valueModel
+      // const valueModel = this.$refs.treeMenu.getCheckedNodes(false, true)
+      const valueModel = this.$refs.treeMenu.getCheckedKeys().concat(this.$refs.treeMenu.getHalfCheckedKeys())
+      this.saveMenuList = this.onSaveMenuList(this.menuDataList, valueModel)
+    },
+    onSaveMenuList(data, valueModel) {
+      const treeList = []
+      data.forEach(item => {
+        if (valueModel.includes(item.route_data)) {
+          const tmp = {
+            ...item
+          }
+          if (item.children && item.children.length !== 0) {
+            this.$set(tmp, 'children', this.onSaveMenuList(item.children, valueModel))
+          }
+          treeList.push(tmp)
+        }
+      })
+      return treeList
     }
   }
 }
