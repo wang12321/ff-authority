@@ -6,8 +6,7 @@ import { limitsMixin } from './mixin'
 // 全局混入
 Vue.mixin(limitsMixin)
 
-import './sidebar/variables.scss'
-import './sidebar/sidebar.scss'
+import './sidebar/sidebar.css'
 
 // 引入
 import Sidebar from './sidebar'

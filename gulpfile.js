@@ -1,6 +1,7 @@
 var gulp = require('gulp');
 const uglify = require('gulp-uglify');
 var bump = require('gulp-bump');
+const sass = require('gulp-sass')(require('sass'));
 
 gulp.task('js',['bump','directive','sidebar','mixin'], function () {
     return gulp.src('./bin/*.js') // read all
@@ -21,6 +22,7 @@ gulp.task('mixin', function () {
 });
 gulp.task('sidebarViewCss', function () {
     return gulp.src('./bin/sidebar/*.scss') // read all
+        .pipe(sass())
         .pipe(gulp.dest('./lib/sidebar'));
 });
 gulp.task('sidebarView', function () {

@@ -1,14 +1,16 @@
 {
   "name": "ff-authority",
-  "version": "1.1.5",
+  "version": "1.1.7",
   "description": "authority",
   "author": "1396933943@qq.com",
   "dependencies": {},
   "devDependencies": {
-    "husky": "~4.2.5",
-    "gulp-bump": "^3.2.0",
     "gulp": "^3.9.1",
-    "gulp-uglify": "^3.0.2"
+    "gulp-bump": "^3.2.0",
+    "gulp-sass": "^5.1.0",
+    "gulp-uglify": "^3.0.2",
+    "husky": "~4.2.5",
+    "sass": "^1.54.9"
   },
   "files": [
     "lib"
